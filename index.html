@@ -53,17 +53,17 @@
 <header>
   <div class="school">Bago National High School · Roxas City</div>
   <h1>School Contributions</h1>
-  <p class="memory">Road Construction &amp; Balloons</p>
+  <p class="memory">Road Construction – ₱400 additional</p>
 </header>
 <main>
   <div class="card">
     <label for="q">Check your name / Hanapin ang pangalan</label>
     <input id="q" type="search" placeholder="Type your name, e.g. Gloria" autocomplete="off">
-    <div class="hint">Shows paid or not yet paid for each collection.</div>
+    <div class="hint">Shows paid or not yet paid for the ₱400 road construction contribution.</div>
     <div id="results"></div>
   </div>
   <div class="card">
-    <div class="tabs" id="tabs"></div>
+    <div class="tabs" id="tabs" hidden></div>
     <div class="summary">
       <div class="stat"><b id="sCount">–</b><span>Paid</span></div>
       <div class="stat"><b id="sTotal">–</b><span>Total collected</span></div>
@@ -79,8 +79,7 @@ const SHEET_ID = "1q586zU0z4bvMp44lQprMWLjcnkaTiG3jPcXl7k53nnY";
 const ROSTER_SHEET_ID = "1kSqsrgzDbwP-M8v_v5WBc0qKsnHsWhq_jrxsBcg0hcc"; // faculty list = column A of the condolence sheet
 /* ===== One entry per tab. gid = number after "gid=" in the tab's URL. ===== */
 const COLLECTIONS = [
-  {key:"road", title:"Road Construction – ₱400 additional", short:"Road ₱400", gid:"0", fixed:400, firstNameOnly:false},
-  {key:"balloons", title:"Balloons – ₱50", short:"Balloons ₱50", gid:"1398005613", fixed:50, firstNameOnly:true}
+  {key:"road", title:"Road Construction – ₱400 additional", short:"Road ₱400", gid:"0", fixed:400, firstNameOnly:false}
 ];
 /* ========================================================================== */
 const urls = (id, gid) => [
@@ -89,7 +88,7 @@ const urls = (id, gid) => [
 ];
 // Saved copies, used only if the live sheet can't be reached.
 const SNAP_DATE = "Oct 12, 2026";
-const SNAPSHOT = {road:`Gloria D. Abella,400`, balloons:`Joana\neloisa\nmarian`,
+const SNAPSHOT = {road:`Gloria D. Abella,400`,
   roster:`Dreamy Dondiego\nGloria Abella\nEloisa Bendo\nAngely Apuyo\nRosela Caldeo\nJoana Anoche\nRosame Danos\nMarian Feranco\nArlene Lasangue\nRocelyn Doronio\nDonna B. Amarillo\nCristine Alovera\nRaymart Valbarez\nJohn Eduard`};
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -205,6 +204,7 @@ function search(){
 }
 function render(){
   const c = COLLECTIONS.find(x => x.key === cur), v = view(c);
+  if (COLLECTIONS.length > 1) document.getElementById("tabs").hidden = false;
   document.getElementById("tabs").innerHTML = COLLECTIONS.map(x => `<button type="button" data-k="${x.key}" class="${x.key === cur ? "on" : ""}">${esc(x.short)}</button>`).join("");
   document.getElementById("sCount").textContent = roster ? v.paid.length + " of " + (v.paid.length + v.notYet.length) : v.paid.length;
   document.getElementById("sTotal").innerHTML = peso(v.paid.reduce((a, p) => a + p.amount, 0));
