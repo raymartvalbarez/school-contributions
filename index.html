@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>School Contributions · Bago NHS</title>
+<meta name="description" content="School contributions record – Bago National High School">
+<meta name="theme-color" content="#3b4250">
+<style>
+  :root{--bg:#f2f2f0;--card:#fff;--ink:#2b2f36;--muted:#6b6f76;--brand:#3b4250;--accent:#8a8175;--line:#e3e2de;--ok:#46604f;--okbg:#e6ece7;--no:#5f636a;--nobg:#ecebe8}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+  header{background:var(--brand);color:#f4f3f0;padding:26px 18px 58px;text-align:center}
+  header .school{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+  header h1{margin:8px 0 4px;font-size:1.35rem;font-weight:600}
+  header .memory{margin:2px 0 0;font-size:1rem;opacity:.92}
+  header .date{margin:4px 0 0;font-size:.85rem;opacity:.75}
+  .ribbon{display:block;width:26px;height:34px;margin:10px auto 0}
+  main{max-width:560px;margin:-38px auto 24px;padding:0 14px}
+  .card{background:var(--card);border-radius:14px;box-shadow:0 4px 16px rgba(40,40,40,.08);padding:18px;margin-bottom:14px}
+  label{font-weight:600;display:block;margin-bottom:8px}
+  input[type=search]{width:100%;font-size:1.05rem;padding:13px 14px;border:2px solid #d8d7d2;border-radius:12px;outline:none;background:#fff;color:var(--ink)}
+  input[type=search]:focus{border-color:var(--brand)}
+  .hint{color:var(--muted);font-size:.85rem;margin-top:8px}
+  h2{font-size:1rem;margin:0 0 10px}
+  .summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat{background:#f6f6f4;border-radius:12px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:1.3rem;color:var(--brand)}
+  .stat span{font-size:.8rem;color:var(--muted)}
+  .stat.grand{grid-column:1/-1;background:#ecebe7}
+  .stat.grand b{font-size:1.6rem}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;margin-top:10px}
+  .row .nm{font-weight:600}
+  .row .ex{font-size:.82rem;color:var(--muted)}
+  .row .amt{text-align:right;white-space:nowrap;font-size:.9rem}
+  .badge{display:inline-block;font-size:.75rem;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--okbg);color:var(--ok);margin-top:3px}
+  .badge.no{background:var(--nobg);color:var(--no)}
+  .empty{background:var(--nobg);color:var(--no);border-radius:12px;padding:14px;margin-top:10px;font-size:.93rem}
+  .toggle{display:flex;justify-content:space-between;align-items:center}
+  button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:9px 14px;background:#e9e8e4;color:var(--brand);cursor:pointer}
+  .grp{font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:16px 0 0}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;padding:6px 14px 30px}
+  .note{font-size:.75rem;opacity:.85;font-style:italic}
+  .live{display:inline-block;width:.5em;height:.5em;border-radius:50%;background:#6b8a74;margin-right:4px;vertical-align:.05em}
+  .ico{display:inline-block;width:1em;height:1em;vertical-align:-.15em}
+  .peso{display:inline-block;width:.62em;height:.72em;margin-right:.04em;vertical-align:baseline;overflow:visible}
+  #status{margin-bottom:6px}
+  .tabs{display:flex;gap:8px;margin-bottom:12px}.tabs button{flex:1}.tabs button.on{background:var(--brand);color:#fff}
+  .cols{display:grid;grid-template-columns:1fr;gap:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="school">Bago National High School · Roxas City</div>
+  <h1>School Contributions</h1>
+  <p class="memory">Road Construction &amp; Balloons</p>
+</header>
+<main>
+  <div class="card">
+    <label for="q">Check your name / Hanapin ang pangalan</label>
+    <input id="q" type="search" placeholder="Type your name, e.g. Gloria" autocomplete="off">
+    <div class="hint">Shows paid or not yet paid for each collection.</div>
+    <div id="results"></div>
+  </div>
+  <div class="card">
+    <div class="tabs" id="tabs"></div>
+    <div class="summary">
+      <div class="stat"><b id="sCount">–</b><span>Paid</span></div>
+      <div class="stat"><b id="sTotal">–</b><span>Total collected</span></div>
+    </div>
+    <div id="rosterNote" class="hint"></div>
+    <input id="f" type="search" placeholder="Filter this list…" autocomplete="off" style="margin-top:12px">
+    <div id="list"></div>
+  </div>
+</main>
+<footer><div id="status"></div>Bago National High School · data from the shared Google Sheet</footer>
+<script>
+const SHEET_ID = "1q586zU0z4bvMp44lQprMWLjcnkaTiG3jPcXl7k53nnY";
+const ROSTER_SHEET_ID = "1kSqsrgzDbwP-M8v_v5WBc0qKsnHsWhq_jrxsBcg0hcc"; // faculty list = column A of the condolence sheet
+/* ===== One entry per tab. gid = number after "gid=" in the tab's URL. ===== */
+const COLLECTIONS = [
+  {key:"road", title:"Road Construction – ₱400 additional", short:"Road ₱400", gid:"0", fixed:400, firstNameOnly:false},
+  {key:"balloons", title:"Balloons – ₱50", short:"Balloons ₱50", gid:"1398005613", fixed:50, firstNameOnly:true}
+];
+/* ========================================================================== */
+const urls = (id, gid) => [
+  "https://docs.google.com/spreadsheets/d/" + id + "/export?format=csv&gid=" + gid,
+  "https://docs.google.com/spreadsheets/d/" + id + "/gviz/tq?tqx=out:csv&gid=" + gid
+];
+// Saved copies, used only if the live sheet can't be reached.
+const SNAP_DATE = "Oct 12, 2026";
+const SNAPSHOT = {road:`Gloria D. Abella,400`, balloons:`Joana\neloisa\nmarian`,
+  roster:`Dreamy Dondiego\nGloria Abella\nEloisa Bendo\nAngely Apuyo\nRosela Caldeo\nJoana Anoche\nRosame Danos\nMarian Feranco\nArlene Lasangue\nRocelyn Doronio\nDonna B. Amarillo\nCristine Alovera\nRaymart Valbarez\nJohn Eduard`};
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const PESO_HTML = '<svg class="peso" viewBox="0 0 13 18" role="img" aria-label="PHP" focusable="false"><path d="M3.6 18V1h4.3a4.4 4.4 0 0 1 0 8.8H3.6" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M0.6 4.3h12M0.6 6.9h12" stroke="currentColor" stroke-width="1.3"/></svg>';
+const peso = v => PESO_HTML + v.toLocaleString("en-PH", {minimumFractionDigits: v % 1 ? 2 : 0, maximumFractionDigits: 2});
+const norm = s => String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9ñ]+/g, " ").trim();
+
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, "");
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ","){ row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r"){ if (c === "\r" && text[i+1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += c;
+  }
+  if (f !== "" || row.length){ row.push(f); rows.push(row); }
+  return rows.map(r => r.map(x => x.trim()));
+}
+function toNumber(v){
+  const t = String(v ?? "").replace(/[\u20B1,\s]|PHP|Php|php/g, "");
+  return (t !== "" && /^-?\d+(\.\d+)?$/.test(t)) ? parseFloat(t) : 0;
+}
+// No header row. A = name, B = ₱100 contribution (blank = not yet), C = optional personal amount.
+// Blank rows and the sheet's own totals row (blank name / "Total") are skipped; totals are computed here.
+function toPeople(rows){
+  const out = [];
+  for (const r of rows){
+    const name = (r[0] || "").trim();
+    if (!name || /^(grand\s*)?total\b/i.test(name) || r.some(x => /^total\s*=?$/i.test(x))) continue;
+    if (/^(name|pangalan)$/i.test(name) && toNumber(r[1]) === 0) continue; // tolerate a header if one is added later
+    out.push({name, base: toNumber(r[1]), personal: toNumber(r[2])});
+  }
+  return out;
+}
+
+
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/, "");
+  const rows = []; let row = [], f = "", q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ","){ row.push(f); f = ""; }
+    else if (c === "\n" || c === "\r"){ if (c === "\r" && text[i+1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else f += c;
+  }
+  if (f !== "" || row.length){ row.push(f); rows.push(row); }
+  return rows.map(r => r.map(x => x.trim()));
+}
+function toNumber(v){
+  const t = String(v ?? "").replace(/[\u20B1,\s]|PHP|Php|php/g, "");
+  return (t !== "" && /^-?\d+(\.\d+)?$/.test(t)) ? parseFloat(t) : 0;
+}
+// No header row. A = name, B = amount (if B is blank, the collection's fixed amount is assumed).
+function toRows(rows, fixed){
+  const out = [];
+  for (const r of rows){
+    const name = (r[0] || "").trim();
+    if (!name || /^(grand\s*)?total\b/i.test(name) || /^(name|pangalan)$/i.test(name)) continue;
+    out.push({name, amount: r[1] && toNumber(r[1]) ? toNumber(r[1]) : fixed});
+  }
+  return out;
+}
+const toks = s => norm(s).split(" ").filter(w => w.length > 1); // drops middle initials
+const first = s => toks(s)[0] || "", last = s => { const t = toks(s); return t.length > 1 ? t[t.length-1] : ""; };
+// Match a sheet entry to roster names. Returns array of roster names (0 = not on list, >1 = ambiguous).
+function matchRoster(entry, roster, firstNameOnly){
+  const e = norm(entry), eT = toks(entry);
+  let hits = roster.filter(r => norm(r) === e);
+  if (hits.length) return hits;
+  if (eT.length > 1) hits = roster.filter(r => first(r) === eT[0] && last(r) === eT[eT.length-1]);
+  if (hits.length) return hits;
+  if (firstNameOnly || eT.length === 1) hits = roster.filter(r => first(r) === eT[0]);
+  return hits;
+}
+
+const D = {}; let roster = null, cur = "road", liveAll = true;
+const CHECK = '<svg class="ico" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const badge = a => a > 0 ? `<span class="badge">${CHECK} Paid ${peso(a)}</span>` : '<span class="badge no">Not yet paid</span>';
+// Build per-collection view: list of {name, amount, note}
+function view(c){
+  const rows = D[c.key] || [];
+  if (!roster) return {paid: rows.map(r => ({...r, note:""})), notYet: []};
+  const paidRoster = new Map(), paid = [];
+  for (const r of rows){
+    const m = matchRoster(r.name, roster, c.firstNameOnly);
+    if (m.length === 1){ paidRoster.set(m[0], (paidRoster.get(m[0]) || 0) + r.amount); paid.push({name: m[0], amount: r.amount, note: norm(m[0]) === norm(r.name) ? "" : "Listed as “" + r.name + "”"}); }
+    else paid.push({name: r.name, amount: r.amount, note: m.length ? "Listed as written – could be " + m.join(" or ") : "Not on the faculty list"});
+  }
+  const notYet = roster.filter(n => !paidRoster.has(n)).map(n => ({name:n, amount:0, note:""}));
+  return {paid, notYet};
+}
+const rowHTML = p => `<div class="row"><div><div class="nm">${esc(p.name)}</div>${p.note ? `<div class="ex">${esc(p.note)}</div>` : ""}</div><div class="amt">${badge(p.amount)}</div></div>`;
+const hit = (name, t) => { const n = norm(name), c = n.replace(/ /g, ""); return t.split(" ").every(w => n.includes(w) || c.includes(w)); };
+
+const q = document.getElementById("q"), res = document.getElementById("results"), f = document.getElementById("f"), list = document.getElementById("list"), status = document.getElementById("status");
+function search(){
+  const t = norm(q.value);
+  if (t.length < 2){ res.innerHTML = ""; return; }
+  const names = new Set();
+  (roster || []).forEach(n => hit(n, t) && names.add(n));
+  const views = COLLECTIONS.map(c => [c, view(c)]);
+  views.forEach(([c, v]) => v.paid.forEach(p => hit(p.name, t) && names.add(p.name)));
+  if (!names.size){ res.innerHTML = `<div class="empty">No name found for “${esc(q.value)}”. Please check the spelling.</div>`; return; }
+  res.innerHTML = [...names].map(n => `<div class="row" style="display:block"><div class="nm">${esc(n)}</div>` +
+    views.map(([c, v]) => { const p = v.paid.find(x => x.name === n), nt = v.notYet.find(x => x.name === n);
+      const b = p ? badge(p.amount) + (p.note ? ` <span class="ex">${esc(p.note)}</span>` : "") : nt ? badge(0) : '<span class="ex">—</span>';
+      return `<div class="toggle" style="margin-top:6px"><span class="ex">${esc(c.title)}</span><span>${b}</span></div>`; }).join("") + "</div>").join("");
+}
+function render(){
+  const c = COLLECTIONS.find(x => x.key === cur), v = view(c);
+  document.getElementById("tabs").innerHTML = COLLECTIONS.map(x => `<button type="button" data-k="${x.key}" class="${x.key === cur ? "on" : ""}">${esc(x.short)}</button>`).join("");
+  document.getElementById("sCount").textContent = roster ? v.paid.length + " of " + (v.paid.length + v.notYet.length) : v.paid.length;
+  document.getElementById("sTotal").innerHTML = peso(v.paid.reduce((a, p) => a + p.amount, 0));
+  document.getElementById("rosterNote").textContent = roster ? "" : "Faculty list unavailable – showing paid names only.";
+  const t = norm(f.value), flt = a => t.length ? a.filter(p => hit(p.name, t)) : a;
+  list.innerHTML = `<div class="grp">${esc(c.title)} · Paid (${v.paid.length})</div>` + flt(v.paid).map(rowHTML).join("")
+    + (roster ? `<div class="grp">Not yet paid (${v.notYet.length})</div>` + flt(v.notYet).map(rowHTML).join("") : "");
+  search();
+}
+document.getElementById("tabs").addEventListener("click", e => { const k = e.target.closest("button")?.dataset.k; if (k){ cur = k; render(); } });
+q.addEventListener("input", search); f.addEventListener("input", render);
+const P = new URLSearchParams(location.search);
+if (P.get("q")) q.value = P.get("q");
+if (P.get("tab")) cur = P.get("tab");
+
+async function fetchCSV(base){
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 12000);
+  try {
+    const r = await fetch(base + "&_=" + Date.now(), {cache: "no-store", signal: ctl.signal});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const txt = await r.text();
+    if (/^\s*<(!doctype|html)/i.test(txt)) throw new Error("not CSV");
+    return parseCSV(txt);
+  } finally { clearTimeout(timer); }
+}
+async function load(id, gid, snap){
+  for (const u of urls(id, gid)){ try { return {rows: await fetchCSV(u), live: true}; } catch (e) { console.warn("Live load failed:", u, e); } }
+  return {rows: parseCSV(snap), live: false};
+}
+(async () => {
+  status.innerHTML = '<span class="note">Loading the latest record…</span>';
+  const [rs, ...cs] = await Promise.all([load(ROSTER_SHEET_ID, "0", SNAPSHOT.roster), ...COLLECTIONS.map(c => load(SHEET_ID, c.gid, SNAPSHOT[c.key]))]);
+  COLLECTIONS.forEach((c, i) => { D[c.key] = toRows(cs[i].rows, c.fixed); if (!cs[i].live) liveAll = false; });
+  const names = [...new Set(rs.rows.map(r => (r[0] || "").trim()).filter(n => n && !/^(grand\s*)?total\b/i.test(n) && !/^(name|pangalan)$/i.test(n)))];
+  roster = names.length ? names : null;
+  render();
+  const t = new Date().toLocaleString("en-PH", {month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit"});
+  status.dataset.source = liveAll ? "live" : "snapshot";
+  status.innerHTML = liveAll ? `<span class="live"></span> Live from the record sheet · loaded <b>${esc(t)}</b>`
+    : `Saved copy from <b>${esc(SNAP_DATE)}</b><br><span class="note">Couldn't reach the live sheet right now.</span>`;
+})();
+</script>
+</body>
+</html>
